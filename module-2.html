@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modul 2 — Pereka Tugas Ejen</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-m2">
+
+  <header class="topbar">
+    <div class="topbar__in">
+      <div class="brand">
+        <div class="slate-mark" aria-hidden="true"></div>
+        <div class="brand__t">
+          <div class="brand__kicker">Module 2 · AI That Does</div>
+          <div class="brand__title" data-i18n="brand">Pereka Tugas Ejen</div>
+        </div>
+      </div>
+      <nav class="topnav" aria-label="Modul">
+        <a href="index.html" data-i18n="navHome">Utama</a>
+        <a href="module-1.html" aria-label="Modul 1">01</a>
+        <a href="module-2.html" aria-current="page" aria-label="Modul 2">02</a>
+        <a href="module-3.html" aria-label="Modul 3">03</a>
+        <a href="module-4.html" aria-label="Modul 4">04</a>
+        <a href="bonus-video.html" aria-label="Bonus">★</a>
+      </nav>
+      <div class="topbar__right">
+        <div class="lang" role="group" aria-label="Language">
+          <button data-lang="ms" aria-pressed="true">BM</button>
+          <button data-lang="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="band">
+      <div class="band__no"><b>02</b> <span data-i18n="kicker">Rangka Kerja 5 Bahagian</span></div>
+      <h1 data-i18n="title">Arahkan ejen AI dengan jelas</h1>
+      <p class="band__sub" data-i18n="sub">
+        Awak tetapkan <strong>Matlamat</strong> dan <strong>Kriteria Selesai</strong> — bahagian hijau.
+        Ejen pula buat Pelan, guna Alat, dan Perhati hasil sehingga kriteria dipenuhi.
+      </p>
+    </section>
+
+    <div class="work">
+      <section class="panel">
+        <div class="panel__head">
+          <h2 data-i18n="panelIn">Reka tugas</h2>
+          <span class="tag">GOAL · CRITERIA · RETURN</span>
+        </div>
+
+        <div class="presets" id="presets">
+          <span class="presets__lead" data-i18n="presetsLead">Contoh selamat</span>
+        </div>
+
+        <div class="block">
+          <div class="block__tab"><span class="n">1</span><span data-i18n="lGoal">Matlamat</span><span class="you-set" data-i18n="youSet">Awak set</span></div>
+          <textarea class="field" id="f-goal" rows="2" data-ph="phGoal"></textarea>
+          <span class="block__hint" data-i18n="hGoal">Apa yang mesti dicapai?</span>
+        </div>
+
+        <div class="block">
+          <div class="block__tab"><span class="n">2</span><span data-i18n="lCriteria">Kriteria Selesai</span><span class="you-set" data-i18n="youSet">Awak set</span></div>
+          <textarea class="field" id="f-criteria" rows="3" data-ph="phCriteria"></textarea>
+          <span class="block__hint" data-i18n="hCriteria">Macam mana kita tahu ia siap? Satu kriteria setiap baris.</span>
+        </div>
+
+        <div class="block">
+          <div class="block__tab"><span class="n">3</span><span data-i18n="lReturn">Pulangkan</span></div>
+          <input class="field" id="f-return" data-ph="phReturn">
+          <span class="block__hint" data-i18n="hReturn">Apa yang ejen patut serahkan di akhir?</span>
+        </div>
+      </section>
+
+      <section class="panel panel--out">
+        <div class="panel__head">
+          <h2 data-i18n="panelOut">Prompt ejen awak</h2>
+        </div>
+        <p class="panel__note" data-i18n="note">Susun seperti demo Gemini: Matlamat, Kriteria, Pulangkan.</p>
+
+        <div class="slate">
+          <div class="slate__label" data-i18n="slateLabel">Salin ini ke AI</div>
+          <div class="slate__body" id="out"></div>
+        </div>
+
+        <div class="row-actions">
+          <button class="btn btn--primary" id="copy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <span data-i18n="copy">Salin prompt</span>
+          </button>
+          <a class="btn" href="https://gemini.google.com/" target="_blank" rel="noopener" data-i18n="openGemini">Buka Gemini ↗</a>
+          <span class="btn__count"><span id="count">0</span> <span data-i18n="chars">aksara</span></span>
+        </div>
+
+        <div class="tip">
+          <span>⚖️</span>
+          <span><b data-i18n="tipB">Kriteria yang baik</b> <span data-i18n="tip">adalah jelas, jujur dan selamat. Elak kriteria yang mudah ditipu, cth. "tunjuk A pada kad laporan".</span></span>
+        </div>
+      </section>
+    </div>
+  </main>
+
+<script>
+  const I18N = {
+    ms: {
+      brand: "Pereka Tugas Ejen", navHome: "Utama",
+      kicker: "Rangka Kerja 5 Bahagian", title: "Arahkan ejen AI dengan jelas",
+      sub: "Awak tetapkan <strong>Matlamat</strong> dan <strong>Kriteria Selesai</strong> — bahagian hijau. Ejen pula buat Pelan, guna Alat, dan Perhati hasil sehingga kriteria dipenuhi.",
+      panelIn: "Reka tugas", presetsLead: "Contoh selamat", youSet: "Awak set",
+      lGoal: "Matlamat", lCriteria: "Kriteria Selesai", lReturn: "Pulangkan",
+      hGoal: "Apa yang mesti dicapai?",
+      hCriteria: "Macam mana kita tahu ia siap? Satu kriteria setiap baris.",
+      hReturn: "Apa yang ejen patut serahkan di akhir?",
+      phGoal: "cth. Rancang acara kelas dengan kos bawah RM100",
+      phCriteria: "cth.\nKos kurang RM100\nRancangan ada apa, di mana, bila\nSesuai untuk semua pelajar",
+      phReturn: "cth. rancangan, anggaran kos, semakan bajet",
+      panelOut: "Prompt ejen awak",
+      note: "Susun seperti demo Gemini: Matlamat, Kriteria, Pulangkan.",
+      slateLabel: "Salin ini ke AI",
+      openGemini: "Buka Gemini ↗",
+      copy: "Salin prompt", copied: "Disalin!", chars: "aksara",
+      empty: "Tetapkan matlamat dan kriteria untuk bina prompt ejen…",
+      tipB: "Kriteria yang baik", tip: "adalah jelas, jujur dan selamat. Elak kriteria yang mudah ditipu, cth. \"tunjuk A pada kad laporan\".",
+      kGoal: "Matlamat", kCriteria: "Kriteria selesai", kReturn: "Pulangkan"
+    },
+    en: {
+      brand: "Agent Task Designer", navHome: "Home",
+      kicker: "The 5-Part Framework", title: "Direct an AI agent clearly",
+      sub: "You set the <strong>Goal</strong> and the <strong>Completion Criteria</strong> — the green parts. The agent then makes a Plan, uses Tools, and Observes the result until the criteria are met.",
+      panelIn: "Design the task", presetsLead: "Safe examples", youSet: "You set",
+      lGoal: "Goal", lCriteria: "Completion Criteria", lReturn: "Return",
+      hGoal: "What must be achieved?",
+      hCriteria: "How do we know it is done? One criterion per line.",
+      hReturn: "What should the agent hand back at the end?",
+      phGoal: "e.g. Plan a class event under RM100",
+      phCriteria: "e.g.\nCost under RM100\nPlan has what, where, when\nSuitable for all students",
+      phReturn: "e.g. plan, cost estimate, budget check",
+      panelOut: "Your agent prompt",
+      note: "Structured like the Gemini demo: Goal, Criteria, Return.",
+      slateLabel: "Copy this into the AI",
+      openGemini: "Open Gemini ↗",
+      copy: "Copy prompt", copied: "Copied!", chars: "characters",
+      empty: "Set a goal and criteria to build the agent prompt…",
+      tipB: "Good criteria", tip: "are clear, honest and safe. Avoid criteria that are easy to exploit, e.g. \"show an A on the report card\".",
+      kGoal: "Goal", kCriteria: "Completion criteria", kReturn: "Return"
+    }
+  };
+
+  const PRESETS = {
+    ms: [
+      { name: "Hari jadi · RM50", goal: "Rancang kejutan hari jadi kawan dengan kos bawah RM50", criteria: "Jumlah kos RM50 atau kurang\nAda makanan, masa dan aktiviti\nSelamat dan sesuai sekolah", ret: "rancangan, senarai barang, anggaran kos, semakan bajet" },
+      { name: "Gerai snek · RM80", goal: "Rancang gerai snek mudah untuk acara sekolah bawah RM80", criteria: "Selamat dan sesuai sekolah\nJumlah kos dalam RM80\nBoleh disediakan oleh pelajar", ret: "rancangan, bahan/alat, anggaran kos, semakan bajet" },
+      { name: "Acara kelas · RM100", goal: "Rancang acara kelas dengan kos bawah RM100", criteria: "Kos kurang RM100\nRancangan ada apa, di mana, bila\nSesuai untuk semua pelajar", ret: "rancangan langkah demi langkah, anggaran kos, semakan bajet" }
+    ],
+    en: [
+      { name: "Birthday · RM50", goal: "Plan a friend's birthday surprise under RM50", criteria: "Total cost RM50 or less\nHas food, time and an activity\nSafe and school-appropriate", ret: "plan, shopping list, cost estimate, budget check" },
+      { name: "Snack booth · RM80", goal: "Plan a simple snack booth for a school event under RM80", criteria: "Safe and school-appropriate\nTotal cost within RM80\nCan be prepared by students", ret: "plan, materials/tools, cost estimate, budget check" },
+      { name: "Class event · RM100", goal: "Plan a class event under RM100", criteria: "Cost under RM100\nPlan has what, where, when\nSuitable for all students", ret: "step-by-step plan, cost estimate, budget check" }
+    ]
+  };
+
+  let lang = "ms";
+  const out = document.getElementById("out");
+  const countEl = document.getElementById("count");
+  const goalEl = document.getElementById("f-goal");
+  const critEl = document.getElementById("f-criteria");
+  const retEl  = document.getElementById("f-return");
+
+  const escapeHtml = s => s.replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+
+  let lastText = "";
+  function render() {
+    const d = I18N[lang];
+    const goal = goalEl.value.trim();
+    const crit = critEl.value.split("\n").map(s => s.trim()).filter(Boolean);
+    const ret  = retEl.value.trim();
+
+    if (!goal && !crit.length) {
+      out.innerHTML = '<span class="slate__empty">' + escapeHtml(d.empty) + "</span>";
+      countEl.textContent = 0; lastText = ""; return;
+    }
+
+    // Plain text for copying
+    const lines = [];
+    lines.push(`${d.kGoal}: ${goal}`);
+    if (crit.length) { lines.push("", `${d.kCriteria}:`); crit.forEach(c => lines.push(`- ${c}`)); }
+    if (ret) lines.push("", `${d.kReturn}: ${ret}`);
+    lastText = lines.join("\n");
+    countEl.textContent = lastText.length;
+
+    // Rich display
+    let html = "";
+    html += block("goal", d.kGoal, escapeHtml(goal));
+    if (crit.length) html += block("criteria", d.kCriteria, crit.map(c => "- " + escapeHtml(c)).join("<br>"));
+    if (ret) html += block("ret", d.kReturn, escapeHtml(ret));
+    out.innerHTML = html;
+
+    flashActive();
+  }
+
+  function block(key, label, body) {
+    return `<div class="slate-block" data-k="${key}"><span class="slate-key">${escapeHtml(label)}:</span> ${body}</div>`;
+  }
+
+  function flashActive() {
+    const a = document.activeElement;
+    let key = null;
+    if (a && a.id === "f-goal") key = "goal";
+    else if (a && a.id === "f-criteria") key = "criteria";
+    else if (a && a.id === "f-return") key = "ret";
+    if (key) {
+      const b = out.querySelector(`[data-k="${key}"]`);
+      if (b) { b.classList.add("flash"); setTimeout(() => b.classList.remove("flash"), 260); }
+    }
+  }
+
+  function applyPreset(p) {
+    goalEl.value = p.goal; critEl.value = p.criteria; retEl.value = p.ret;
+    render();
+  }
+
+  function buildPresets() {
+    const box = document.getElementById("presets");
+    box.querySelectorAll(".preset").forEach(b => b.remove());
+    PRESETS[lang].forEach(p => {
+      const b = document.createElement("button");
+      b.className = "preset"; b.textContent = p.name;
+      b.addEventListener("click", () => applyPreset(p));
+      box.appendChild(b);
+    });
+  }
+
+  [goalEl, critEl, retEl].forEach(el => el.addEventListener("input", render));
+
+  const copyBtn = document.getElementById("copy");
+  copyBtn.addEventListener("click", async () => {
+    if (!lastText) return;
+    try { await navigator.clipboard.writeText(lastText); }
+    catch (e) {
+      const ta = document.createElement("textarea");
+      ta.value = lastText; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (_) {}
+      document.body.removeChild(ta);
+    }
+    copyBtn.classList.add("copied");
+    copyBtn.querySelector("span").textContent = I18N[lang].copied;
+    setTimeout(() => {
+      copyBtn.classList.remove("copied");
+      copyBtn.querySelector("span").textContent = I18N[lang].copy;
+    }, 1600);
+  });
+
+  function setLang(l) {
+    lang = l;
+    const d = I18N[l];
+    document.documentElement.lang = l;
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      const v = d[el.dataset.i18n];
+      if (v == null) return;
+      if (el.dataset.i18n === "sub") el.innerHTML = v; else el.textContent = v;
+    });
+    document.querySelectorAll("[data-ph]").forEach(el => { el.placeholder = d[el.dataset.ph] || ""; });
+    document.querySelectorAll(".lang button").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
+    copyBtn.querySelector("span").textContent = d.copy;
+    buildPresets();
+    render();
+    try { localStorage.setItem("workshop-lang", l); } catch (e) {}
+  }
+  document.querySelectorAll(".lang button").forEach(b =>
+    b.addEventListener("click", () => setLang(b.dataset.lang)));
+
+  let saved = "ms";
+  try { saved = localStorage.getItem("workshop-lang") || "ms"; } catch (e) {}
+  setLang(saved);
+</script>
+</body>
+</html>

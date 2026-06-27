@@ -1,0 +1,430 @@
+/* =========================================================================
+   Generative AI Challenge Workshop — The Director's Kit
+   Shared design system (vanilla CSS, no build step).
+
+   Concept: the student is the DIRECTOR; each tool helps write the direction
+   (the prompt) they hand to the AI to "shoot." The clapperboard is the
+   through-line — the diagonal clap stripe is the structural rule, and every
+   tool's output panel is the slate you copy into Gemini.
+
+   Type: Jost (film-poster display) · Hanken Grotesk (body) ·
+         Courier Prime (the "script" — slate output + slug-line labels).
+
+   Per-page accent is one lighting "gel", set with a class on <body>:
+     .theme-index .theme-m1 .theme-m2 .theme-m3 .theme-m4 .theme-bonus
+   The gels march warm -> cool across the workshop sequence.
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* ----------------------------- Tokens ----------------------------------- */
+:root {
+  --paper:      #F2EEE4;   /* warm film-leader bone */
+  --paper-2:    #E8E2D2;   /* insets, segmented controls */
+  --card:       #FBF9F3;   /* lifted warm white for panels */
+  --ink:        #1A1714;   /* warm clapperboard near-black */
+  --ink-soft:   #5A5247;
+  --ink-faint:  #6B6454;   /* AA: 5.1:1 on paper, for hints/captions/counts */
+  --line:       #DCD5C4;
+  --line-soft:  #E8E2D3;
+  --field-line: #908975;   /* AA 1.4.11: 3.3:1 border for form controls */
+
+  /* Slate (the dark output board) surfaces */
+  --slate-bg:   #1A1714;
+  --slate-bg-2: #2A2620;
+  --slate-fg:   #F3EFE4;
+  --slate-mute: #A89E8B;
+
+  /* Accent gel — re-pointed per theme below. Marquee red is the hub default.
+     --accent     : bright gel for stripes/rails/large marks (decorative + large text)
+     --accent-deep: AA-safe (>=4.5 on paper/card/tint) for small accent TEXT + button hover
+     --btn        : AA-safe gel fill for white-on-accent buttons (>=4.5 with #fff)
+     --accent-ink : darkest on-brand ink, used on the pale --accent-tint surfaces */
+  --accent:      #D9412B;
+  --accent-deep: #B83725;
+  --btn:         #D23F2A;
+  --accent-tint: #F8E1DA;
+  --accent-ink:  #7A1F12;
+
+  --display: 'Jost', 'Trebuchet MS', sans-serif;
+  --body:    'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  --mono:    'Courier Prime', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --r-lg: 16px;
+  --r-md: 12px;
+  --r-sm: 8px;
+
+  --shadow-card: 0 1px 0 rgba(26,23,20,.04), 0 22px 44px -30px rgba(26,23,20,.5);
+  --shadow-pop:  0 30px 60px -28px rgba(26,23,20,.55);
+
+  --maxw: 1180px;
+}
+
+/* Lighting gels — one coherent set, warm -> cool across the sequence.
+   Deep/btn values are tuned to clear WCAG 2.1 AA (see token notes above). */
+.theme-index { --accent:#D9412B; --accent-deep:#B83725; --btn:#D23F2A; --accent-tint:#F8E1DA; --accent-ink:#7A1F12; }
+.theme-m1    { --accent:#EE6B3F; --accent-deep:#A94C2D; --btn:#BC5532; --accent-tint:#FCE7DB; --accent-ink:#82371B; }
+.theme-m2    { --accent:#E0A11C; --accent-deep:#8B6411; --btn:#986D13; --accent-tint:#FBEFD0; --accent-ink:#79520A; }
+.theme-m3    { --accent:#169B83; --accent-deep:#117664; --btn:#13846F; --accent-tint:#D7F0EA; --accent-ink:#08493D; }
+.theme-m4    { --accent:#6657D6; --accent-deep:#6153CB; --btn:#6657D6; --accent-tint:#E6E2FB; --accent-ink:#2E2470; --accent-on-dark:#8679E0; /* AA: 4.9:1 on slate-bg, --accent itself is only 3.3:1 */ }
+.theme-bonus { --accent:#D43F7C; --accent-deep:#B43669; --btn:#CE3D78; --accent-tint:#FBE0EC; --accent-ink:#6F1A3C; }
+
+/* ----------------------------- Reset ------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--body);
+  color: var(--ink);
+  background: var(--paper);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  /* faint screening-room vignette — cinema, not a corner accent blob */
+  background-image: radial-gradient(135% 120% at 50% -20%, #FBF8F0 0%, var(--paper) 46%, #ECE6D8 100%);
+  background-attachment: fixed;
+}
+h1, h2, h3 { font-family: var(--display); margin: 0; line-height: 1.04; letter-spacing: -.015em; }
+p { margin: 0; }
+a { color: inherit; }
+button { font-family: inherit; cursor: pointer; }
+input, textarea, select { font-family: inherit; }
+:focus-visible { outline: 3px solid var(--accent-deep); outline-offset: 2px; border-radius: 5px; }
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+/* The diagonal clap stripe — the kit's structural signature.
+   Reused on the slate-mark, the slate output and the hero board. */
+.clap { background: repeating-linear-gradient(122deg, var(--ink) 0 12px, var(--slate-fg) 12px 24px); }
+
+/* ----------------------------- Top bar ---------------------------------- */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: color-mix(in srgb, var(--paper) 84%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar__in {
+  max-width: var(--maxw); margin: 0 auto; padding: 13px 24px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+/* Clapperboard mark — the director's slate */
+.slate-mark {
+  width: 44px; height: 40px; border-radius: 7px; flex: none;
+  background: var(--ink); position: relative; overflow: hidden;
+  box-shadow: 0 6px 14px -8px rgba(26,23,20,.6);
+}
+.slate-mark::before { /* clapstick: gel teeth on top */
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 13px;
+  background: repeating-linear-gradient(122deg, var(--accent) 0 7px, var(--slate-fg) 7px 14px);
+  transform: skewX(-16deg) translateX(-5px); transform-origin: left;
+}
+.slate-mark::after { /* slate body lines */
+  content: ""; position: absolute; left: 7px; right: 7px; top: 21px; height: 2px;
+  border-radius: 2px; background: var(--slate-mute); opacity: .5;
+  box-shadow: 0 6px 0 -1px var(--slate-mute);
+}
+.brand__t { min-width: 0; }
+.brand__kicker {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--accent-deep); font-weight: 700;
+}
+.brand__title { font-family: var(--display); font-size: 16px; font-weight: 700; color: var(--ink); white-space: nowrap; letter-spacing: -.01em; }
+
+.topbar__right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+
+/* Top nav — reels strip, Courier slugs */
+.topnav { display: flex; align-items: center; justify-content: center; gap: 2px; }
+.topnav a {
+  font-family: var(--mono); font-size: 12.5px; font-weight: 700;
+  color: var(--ink-soft); text-decoration: none; white-space: nowrap;
+  padding: 7px 10px; border-radius: var(--r-sm);
+}
+.topnav a:hover { color: var(--ink); background: var(--paper-2); }
+.topnav a[aria-current="page"] { color: var(--accent-deep); background: var(--accent-tint); }
+
+@media (max-width: 760px) {
+  .topbar__in { grid-template-columns: 1fr auto; grid-template-areas: "brand lang" "nav nav"; row-gap: 10px; }
+  .brand { grid-area: brand; min-width: 0; }
+  .brand__title { white-space: normal; font-size: 14.5px; line-height: 1.12; }
+  .topbar__right { grid-area: lang; }
+  .topnav { grid-area: nav; flex-wrap: wrap; justify-content: flex-start; }
+}
+
+/* Language toggle */
+.lang { display: inline-flex; background: var(--paper-2); border: 1px solid var(--line); border-radius: 9px; padding: 3px; }
+.lang button {
+  border: 0; background: transparent; color: var(--ink-soft);
+  font-family: var(--mono); font-size: 12px; font-weight: 700; padding: 6px 11px; border-radius: 6px; letter-spacing: .04em;
+}
+.lang button[aria-pressed="true"] { background: var(--card); color: var(--accent-deep); box-shadow: 0 1px 3px rgba(26,23,20,.16); }
+
+/* ----------------------------- Module header band ----------------------- */
+.band { padding: 44px 0 8px; }
+/* Scene marker — a clapper-striped chip + big take number */
+.band__no {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--accent-deep); font-weight: 700; margin-bottom: 16px;
+}
+.band__no::before {
+  content: ""; width: 30px; height: 16px; border-radius: 3px; flex: none;
+  background: repeating-linear-gradient(122deg, var(--accent) 0 6px, var(--card) 6px 12px);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+.band__no b {
+  font-family: var(--display); font-size: 30px; line-height: 1; color: var(--ink);
+  letter-spacing: -.02em; font-weight: 800;
+}
+.band h1 { font-size: clamp(29px, 4.8vw, 48px); font-weight: 700; max-width: 18ch; }
+.band__sub { margin-top: 14px; max-width: 60ch; color: var(--ink-soft); font-size: 16.5px; }
+.band__sub strong { color: var(--ink); font-weight: 700; }
+
+/* ----------------------------- Workspace grid --------------------------- */
+.work { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px; align-items: start; padding: 28px 0 72px; }
+@media (max-width: 900px) { .work { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card); padding: 24px;
+}
+.panel__head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.panel__head h2 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+.panel__head .tag {
+  margin-left: auto; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--accent-ink); background: var(--accent-tint);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line)); padding: 4px 9px; border-radius: 5px;
+}
+.panel__note { color: var(--ink-soft); font-size: 13.5px; margin: 2px 0 20px; }
+
+/* The output panel sticks on wide screens so students see it while typing */
+@media (min-width: 901px) { .panel--out { position: sticky; top: 84px; } }
+
+/* ----------------------------- Cue blocks (inputs) ---------------------- */
+/* Screenplay "cue": a slug-line label + a clean script field, tied by a
+   gel rail down the left. No keycaps — this is direction, not a keyboard. */
+.block { position: relative; margin: 0 0 18px; padding-left: 16px; }
+.block::before {
+  content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px;
+  border-radius: 3px; background: var(--line);
+}
+.block:focus-within::before { background: var(--accent); }
+.block__tab {
+  display: flex; align-items: center; gap: 9px; margin-bottom: 8px;
+  font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-soft);
+}
+.block:focus-within .block__tab { color: var(--accent-deep); }
+.block__tab .n {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+  width: 20px; height: 20px; border-radius: 999px;
+  display: grid; place-items: center; background: var(--btn); color: #fff;
+  letter-spacing: 0;
+}
+.block__tab .you-set {
+  margin-left: 2px; font-size: 9px; letter-spacing: .12em; padding: 3px 7px; border-radius: 999px;
+  background: var(--accent-tint); color: var(--accent-ink); text-transform: uppercase;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+}
+.block__hint { display: block; font-size: 12.5px; color: var(--ink-faint); margin: 8px 0 0; }
+
+.field, textarea.field {
+  width: 100%; display: block;
+  border: 1.5px solid var(--field-line); border-radius: var(--r-sm);
+  background: #fff; color: var(--ink);
+  padding: 11px 13px; font-size: 14.5px; line-height: 1.5;
+}
+textarea.field { resize: vertical; min-height: 58px; }
+.field::placeholder, textarea.field::placeholder { color: #7E7868; }
+.field:focus, textarea.field:focus {
+  outline: 0; border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Segmented control (input-type / build-refine) */
+.seg { display: inline-flex; background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; padding: 4px; gap: 4px; }
+.seg button {
+  border: 0; background: transparent; color: var(--ink-soft);
+  font-weight: 600; font-size: 13px; padding: 8px 15px; border-radius: 7px;
+  white-space: pre-line; text-align: center; line-height: 1.15;
+}
+.seg button[aria-pressed="true"] { background: var(--card); color: var(--accent-deep); box-shadow: 0 1px 3px rgba(26,23,20,.16); }
+
+/* Preset chips — "takes" to start from */
+.presets { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 20px; }
+.preset {
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: var(--card);
+  color: var(--accent-ink); font-weight: 600; font-size: 13px;
+  padding: 8px 13px; border-radius: 7px;
+  transition: border-color .14s ease, box-shadow .14s ease, transform .14s ease;
+}
+.preset:hover { border-color: var(--accent); box-shadow: 0 6px 16px -10px var(--accent); transform: translateY(-1px); }
+.preset[aria-pressed="true"] { background: var(--btn); color: #fff; border-color: var(--btn); }
+.presets__lead { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); width: 100%; margin-bottom: -6px; }
+
+/* ----------------------------- Slate (output) --------------------------- */
+/* The clapperboard you copy into the AI. */
+.slate {
+  background: var(--slate-bg); color: var(--slate-fg); border-radius: var(--r-md);
+  padding: 20px 18px 20px; position: relative; overflow: hidden;
+  box-shadow: 0 24px 50px -28px rgba(26,23,20,.7);
+}
+.slate::before { /* clapstick teeth */
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 12px;
+  background: repeating-linear-gradient(122deg, var(--accent) 0 13px, var(--slate-fg) 13px 26px);
+}
+.slate__label {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--slate-mute); margin: 12px 0 14px; display: flex; align-items: center; gap: 8px;
+}
+.slate__label::before { content: "●"; color: var(--accent); font-size: 9px; }
+.slate__body { font-family: var(--mono); font-size: 13.5px; line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
+/* assembled parts: each labeled segment of the prompt */
+.seg-part {
+  border-radius: 4px; padding: 1px 4px; margin: 0 -2px;
+  transition: background-color .45s ease;
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.seg-part[data-on="1"] { background: color-mix(in srgb, var(--accent) 32%, transparent); }
+.seg-part.flash { background: color-mix(in srgb, var(--accent) 60%, transparent); transition: background-color .05s; }
+.slate__empty { color: var(--slate-mute); font-style: italic; }
+
+.slate-block { margin-top: 14px; }
+.slate-block:first-of-type { margin-top: 0; }
+.slate-block.flash { background: color-mix(in srgb, var(--accent) 22%, transparent); border-radius: 6px; transition: background-color .05s; }
+.slate-key { color: var(--accent-on-dark, var(--accent)); font-weight: 700; }
+
+/* Weak version, shown faint for contrast */
+.weak { opacity: .55; }
+
+/* ----------------------------- Buttons ---------------------------------- */
+.row-actions { display: flex; align-items: center; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.btn {
+  border: 1.5px solid var(--ink); background: transparent; color: var(--ink);
+  font-weight: 700; font-size: 13.5px; padding: 11px 16px; border-radius: var(--r-sm);
+  display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
+  transition: background-color .14s ease, color .14s ease, transform .14s ease;
+}
+.btn:hover { background: var(--ink); color: var(--paper); }
+.btn--primary { background: var(--btn); border-color: var(--btn); color: #fff; box-shadow: 0 14px 26px -16px var(--accent); }
+.btn--primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); color: #fff; }
+.btn--primary.copied { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.btn svg { width: 16px; height: 16px; }
+.btn__count { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-left: auto; letter-spacing: .02em; }
+
+/* Tip strip below output — a director's margin note */
+.tip {
+  margin-top: 14px; font-size: 13px; color: var(--ink-soft);
+  background: var(--card); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-sm); padding: 11px 13px; display: flex; gap: 9px;
+}
+.tip b { color: var(--accent-ink); }
+
+/* ----------------------------- Index: hero clapperboard ----------------- */
+.hero {
+  display: grid; grid-template-columns: 1.05fr .95fr; gap: 44px; align-items: center;
+  padding: 60px 0 34px;
+}
+@media (max-width: 880px) { .hero { grid-template-columns: 1fr; gap: 34px; padding: 40px 0 20px; } }
+
+.hero__eyebrow {
+  font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--accent-deep); font-weight: 700;
+}
+.hero h1 {
+  font-size: clamp(38px, 6.4vw, 74px); font-weight: 800; margin-top: 18px; max-width: 12ch;
+  text-transform: uppercase; line-height: .96; letter-spacing: -.02em;
+}
+.hero h1 em { font-style: normal; color: var(--accent); display: block; }
+.hero__lead { margin-top: 22px; max-width: 46ch; font-size: 17.5px; color: var(--ink-soft); }
+.hero__lead strong { color: var(--ink); font-weight: 700; }
+
+/* The clapperboard prop */
+.board {
+  background: var(--slate-bg); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 40px 80px -36px rgba(26,23,20,.72), inset 0 0 0 1px rgba(255,255,255,.04);
+  color: var(--slate-fg); position: relative;
+}
+.board__clap { position: relative; height: 56px; }
+.board__bar { /* fixed lower jaw */
+  position: absolute; left: 0; right: 0; bottom: 0; height: 26px;
+  background: repeating-linear-gradient(122deg, var(--accent) 0 22px, var(--slate-fg) 22px 44px);
+  border-bottom: 2px solid #000;
+}
+.board__stick { /* hinged upper jaw, claps on load */
+  position: absolute; left: 0; right: 0; bottom: 24px; height: 26px;
+  background: repeating-linear-gradient(122deg, var(--accent) 0 22px, var(--slate-fg) 22px 44px);
+  transform-origin: 10px 100%; transform: rotate(-26deg);
+  animation: clap 1.05s cubic-bezier(.5,1.6,.5,1) .55s both;
+}
+@keyframes clap {
+  0%   { transform: rotate(-26deg); }
+  55%  { transform: rotate(0deg); }
+  68%  { transform: rotate(-6deg); }
+  100% { transform: rotate(0deg); }
+}
+.board__grid { padding: 18px 20px 22px; display: grid; gap: 0; }
+.board__row {
+  display: grid; grid-template-columns: 92px 1fr; align-items: baseline; gap: 14px;
+  padding: 11px 0; border-top: 1px solid rgba(255,255,255,.09);
+}
+.board__row:first-child { border-top: 0; }
+.board__row span {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--slate-mute);
+}
+.board__row b {
+  font-family: var(--display); font-weight: 700; font-size: clamp(17px, 2.3vw, 23px);
+  color: var(--slate-fg); letter-spacing: -.01em;
+}
+.board__row b.hi { color: var(--accent); }
+
+/* ----------------------------- Index: reel deck ------------------------- */
+.deck { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; padding: 26px 0 78px; }
+@media (max-width: 940px) { .deck { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .deck { grid-template-columns: 1fr; } }
+
+.mod {
+  --accent:#D9412B; --accent-deep:#B83725; --btn:#D23F2A; --accent-tint:#F8E1DA; --accent-ink:#7A1F12;
+  position: relative; display: flex; flex-direction: column; text-decoration: none;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card); padding: 20px 20px 22px; min-height: 224px; overflow: hidden;
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+.mod::before { /* gel clap stripe across the top of every reel */
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 8px;
+  background: repeating-linear-gradient(122deg, var(--accent) 0 11px, var(--card) 11px 22px);
+}
+.mod:hover { transform: translateY(-4px); box-shadow: var(--shadow-pop); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.mod.m1 { --accent:#EE6B3F; --accent-deep:#A94C2D; --btn:#BC5532; --accent-tint:#FCE7DB; --accent-ink:#82371B; }
+.mod.m2 { --accent:#E0A11C; --accent-deep:#8B6411; --btn:#986D13; --accent-tint:#FBEFD0; --accent-ink:#79520A; }
+.mod.m3 { --accent:#169B83; --accent-deep:#117664; --btn:#13846F; --accent-tint:#D7F0EA; --accent-ink:#08493D; }
+.mod.m4 { --accent:#6657D6; --accent-deep:#6153CB; --btn:#6657D6; --accent-tint:#E6E2FB; --accent-ink:#2E2470; }
+.mod.bonus { --accent:#D43F7C; --accent-deep:#B43669; --btn:#CE3D78; --accent-tint:#FBE0EC; --accent-ink:#6F1A3C; }
+.mod__no {
+  font-family: var(--display); font-weight: 800; font-size: 40px; line-height: 1;
+  color: var(--accent-deep); letter-spacing: -.03em; margin-top: 8px;
+}
+.mod.bonus .mod__no { font-size: 24px; letter-spacing: .02em; text-transform: uppercase; padding-top: 8px; }
+.mod__name { font-family: var(--display); font-weight: 700; font-size: 20px; color: var(--ink); margin: 14px 0 6px; letter-spacing: -.01em; }
+.mod__theme { font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; color: var(--accent-deep); text-transform: uppercase; margin-bottom: 11px; }
+.mod__theme::before { content: "› "; }
+.mod__desc { font-size: 13.5px; color: var(--ink-soft); }
+.mod__go { margin-top: auto; padding-top: 16px; font-family: var(--mono); font-weight: 700; font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--accent-deep); display: inline-flex; align-items: center; gap: 7px; }
+.mod:hover .mod__go { gap: 11px; }
+
+.foot { border-top: 1px solid var(--line); padding: 26px 0 56px; color: var(--ink-faint); font-size: 13px; }
+.foot__head { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 12px; }
+.foot__rule { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.foot__rule span { display: inline-flex; align-items: center; }
+.foot__rule span::before { content: ""; width: 16px; height: 8px; margin-right: 9px; border-radius: 2px; background: repeating-linear-gradient(122deg, var(--accent) 0 4px, transparent 4px 8px); }
+
+/* ----------------------------- Motion opt-out --------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .mod:hover { transform: none; }
+  .board__stick { transform: rotate(0deg); }
+}

@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bonus — Pengarah Video AI</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Storyboard simulator + concept builder — bonus-only, kept inline so the shared sheet stays lean */
+
+  /* Concept picker — choose the kind of 10s video to direct */
+  .concepts { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin: 8px 0 22px; }
+  @media (max-width: 480px) { .concepts { grid-template-columns: 1fr; } }
+  .concept { display: flex; gap: 10px; align-items: flex-start; text-align: left;
+    border: 1.5px solid var(--field-line); background: #fff; border-radius: 10px; padding: 11px 12px;
+    transition: border-color .14s ease, background .14s ease, transform .14s ease, box-shadow .14s ease; }
+  .concept:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .concept[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-tint); box-shadow: 0 8px 18px -12px var(--accent); }
+  .concept__ico { font-size: 20px; line-height: 1.05; }
+  .concept__t { display: block; font-family: var(--display); font-weight: 700; font-size: 14px; color: var(--ink); letter-spacing: -.01em; }
+  .concept__d { display: block; font-size: 11px; color: var(--ink-faint); margin-top: 2px; line-height: 1.35; }
+
+  /* Suggestion pills beside each field */
+  .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+  .pill { border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line)); background: var(--card);
+    color: var(--accent-ink); font-weight: 600; font-size: 12px; padding: 5px 11px; border-radius: 99px;
+    transition: border-color .14s ease, background .14s ease, color .14s ease, transform .14s ease; }
+  .pill:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .pill[aria-pressed="true"] { background: var(--btn); border-color: var(--btn); color: #fff; }
+
+  /* "Refill example" link in the panel head */
+  .head-reset { margin-left: auto; border: 0; background: transparent; color: var(--accent-deep);
+    font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    padding: 5px 8px; border-radius: 6px; }
+  .head-reset:hover { background: var(--accent-tint); }
+
+  /* Storyboard frame */
+  .sb { background: var(--ink); border-radius: var(--r-md); overflow: hidden; }
+  .sb__bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.09); }
+  .sb__bar > span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--slate-mute); }
+  .sb__ctrl { display: flex; align-items: center; gap: 12px; }
+  .sb__dots { display: flex; gap: 6px; }
+  .sb__dots button { width: 9px; height: 9px; border-radius: 99px; border: 0; background: #4a4339; padding: 0; transition: width .2s, background .2s; }
+  .sb__dots button[aria-current="true"] { width: 22px; background: var(--accent); }
+  .sb__play { border: 0; background: transparent; color: var(--slate-mute); cursor: pointer; font-size: 14px; }
+  .sb__screen { height: 230px; position: relative; display: grid; place-items: center; overflow: hidden; background:
+      radial-gradient(60% 60% at 50% 30%, color-mix(in srgb, var(--pick, var(--accent)) 16%, transparent), transparent 70%), #14110D; }
+  .beat { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 0 16px; }
+  .beat.on { display: flex; animation: fade .4s ease; }
+  @keyframes fade { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: scale(1); } }
+  .beat__cap { font-family: var(--mono); font-size: 12px; color: var(--accent); text-align: center; max-width: 32ch; }
+
+  /* Reusable storyboard motifs */
+  .plate { width: 150px; height: 78px; background: #fff; border-radius: 14px; position: relative; overflow: hidden; box-shadow: 0 20px 40px -20px #000; }
+  .drop { position: absolute; left: 50%; top: -14px; width: 9px; height: 14px; background: #7fb6ff; border-radius: 0 0 50% 50%; transform: translateX(-50%); animation: drop 1.6s infinite ease-in; }
+  @keyframes drop { 0% { top: -14px; opacity: 0; } 30% { opacity: 1; } 70% { top: 40px; opacity: .9; } 100% { top: 40px; opacity: 0; } }
+
+  .pieces { display: grid; grid-template-columns: repeat(6, 1fr); gap: 7px; }
+  .pieces i { width: 16px; height: 16px; border-radius: 5px; background: #fff; display: block; animation: pulse 1.4s infinite ease-in-out; }
+  @keyframes pulse { 0%,100% { opacity: .35; transform: translateY(2px); } 50% { opacity: 1; transform: translateY(-2px); } }
+
+  .word { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 6vw, 44px); color: #fff; letter-spacing: .06em; text-transform: uppercase; position: relative; max-width: 100%; word-break: break-word; text-align: center; }
+  .word--freeze { padding: 8px 18px; border-radius: 12px; background: rgba(255,255,255,.06); overflow: hidden; }
+  .word--freeze::after { content: ""; position: absolute; inset: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent); transform: translateX(-160%) skewX(-12deg); animation: sheen 2.4s infinite ease-in-out; }
+  @keyframes sheen { 0% { transform: translateX(-160%) skewX(-12deg); } 60%,100% { transform: translateX(360%) skewX(-12deg); } }
+
+  /* Product reveal — a hero object */
+  .obj { width: 90px; height: 116px; border-radius: 16px; position: relative; background: linear-gradient(155deg, #fff 0%, #cfcabf 100%); box-shadow: 0 26px 44px -20px #000; }
+  .obj::before { content: ""; position: absolute; top: -13px; left: 50%; transform: translateX(-50%); width: 26px; height: 15px; border-radius: 6px 6px 0 0; background: #b7b2a6; }
+  .obj--dark { filter: brightness(.28) saturate(.6); }
+  .obj--spin { animation: objspin 3.2s infinite ease-in-out; }
+  @keyframes objspin { 0%,100% { transform: rotateY(-16deg); } 50% { transform: rotateY(16deg); } }
+  .obj--lit { overflow: hidden; background: linear-gradient(155deg, color-mix(in srgb, var(--pick, var(--accent)) 24%, #fff), color-mix(in srgb, var(--pick, var(--accent)) 55%, #6b6b6b)); }
+  .obj--lit::after { content: ""; position: absolute; inset: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.6), transparent); transform: translateX(-160%) skewX(-12deg); animation: sheen 2.4s infinite ease-in-out; }
+
+  /* Logo morph — floating elements */
+  .shapes { position: relative; width: 184px; height: 124px; }
+  .shapes i { position: absolute; width: 26px; height: 26px; background: var(--pick, var(--accent)); opacity: .92; animation: drift 3.4s infinite ease-in-out; }
+  .shapes i:nth-child(2n) { border-radius: 50%; }
+  .shapes i:nth-child(3n) { border-radius: 6px; rotate: 12deg; }
+  @keyframes drift { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
+  /* Time-lapse — bars rising like something growing / building over time */
+  .grow { display: flex; align-items: flex-end; gap: 9px; height: 124px; }
+  .grow i { width: 18px; height: 18px; border-radius: 5px 5px 0 0; background: var(--pick, var(--accent)); animation: rise 2.4s infinite ease-in-out; }
+  @keyframes rise { 0% { height: 16px; opacity: .5; } 50% { height: 104px; opacity: 1; } 100% { height: 16px; opacity: .5; } }
+
+  /* Stop-motion — a wobbling handmade character (stepped motion = stop-motion jitter) */
+  .clay { width: 110px; height: 96px; position: relative; box-shadow: 0 22px 40px -20px #000;
+    border-radius: 46% 54% 50% 50% / 56% 56% 44% 44%; animation: claywob .9s infinite steps(3);
+    background: linear-gradient(160deg, color-mix(in srgb, var(--pick, var(--accent)) 72%, #fff), color-mix(in srgb, var(--pick, var(--accent)) 52%, #8a6b4a)); }
+  .clay span { position: absolute; top: 34px; width: 13px; height: 13px; border-radius: 50%; background: #1a1714; }
+  .clay span:nth-child(1) { left: 30px; } .clay span:nth-child(2) { right: 30px; }
+  @keyframes claywob { 0% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } 100% { transform: translateY(0) rotate(-2deg); } }
+
+  /* Explainer — simple icons connected by arrows */
+  .icons { display: flex; align-items: center; gap: 12px; }
+  .icons b { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-size: 24px; color: #fff;
+    background: var(--pick, var(--accent)); box-shadow: 0 16px 30px -16px #000; animation: pop 1.9s infinite ease-in-out; }
+  .icons span { width: 18px; height: 3px; border-radius: 3px; background: var(--slate-mute); }
+  @keyframes pop { 0%,100% { transform: translateY(0); opacity: .72; } 50% { transform: translateY(-6px); opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) { .drop, .pieces i, .word--freeze::after, .obj--spin, .obj--lit::after, .shapes i, .grow i, .clay, .icons b { animation: none; } }
+</style>
+</head>
+<body class="theme-bonus">
+
+  <header class="topbar">
+    <div class="topbar__in">
+      <div class="brand">
+        <div class="slate-mark" aria-hidden="true"></div>
+        <div class="brand__t">
+          <div class="brand__kicker">Bonus · AI That Creates</div>
+          <div class="brand__title" data-i18n="brand">Pengarah Video AI</div>
+        </div>
+      </div>
+      <nav class="topnav" aria-label="Modul">
+        <a href="index.html" data-i18n="navHome">Utama</a>
+        <a href="module-1.html" aria-label="Modul 1">01</a>
+        <a href="module-2.html" aria-label="Modul 2">02</a>
+        <a href="module-3.html" aria-label="Modul 3">03</a>
+        <a href="module-4.html" aria-label="Modul 4">04</a>
+        <a href="bonus-video.html" aria-current="page" aria-label="Bonus">★</a>
+      </nav>
+      <div class="topbar__right">
+        <div class="lang" role="group" aria-label="Language">
+          <button data-lang="ms" aria-pressed="true">BM</button>
+          <button data-lang="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="band">
+      <div class="band__no"><b>★</b> <span data-i18n="kicker">Video Sinematik 10 Saat</span></div>
+      <h1 data-i18n="title">Reka video AI 10 saat awak</h1>
+      <p class="band__sub" data-i18n="sub">
+        Pilih satu konsep, isi butiran (atau ketik pil cadangan), dan alat ini menulis prompt video
+        sinematik 10 saat. Salin ke <strong>Gemini</strong> untuk menjana video.
+      </p>
+    </section>
+
+    <div class="work">
+      <section class="panel">
+        <div class="panel__head">
+          <h2 data-i18n="panelIn">Reka video</h2>
+          <button class="head-reset" id="reset" type="button" data-i18n="reset">↺ Contoh</button>
+          <span class="tag">10s</span>
+        </div>
+
+        <div class="presets__lead" style="margin-bottom:8px" data-i18n="conceptLead">Pilih konsep video</div>
+        <div class="concepts" id="concepts"></div>
+
+        <div id="blocks"></div>
+      </section>
+
+      <section class="panel panel--out">
+        <!-- Storyboard simulator -->
+        <div class="sb">
+          <div class="sb__bar">
+            <span data-i18n="sbTitle">Pratonton 10 saat</span>
+            <div class="sb__ctrl">
+              <div class="sb__dots" id="sb-dots">
+                <button data-step="1" aria-current="true" aria-label="1"></button>
+                <button data-step="2" aria-label="2"></button>
+                <button data-step="3" aria-label="3"></button>
+                <button data-step="4" aria-label="4"></button>
+              </div>
+              <button class="sb__play" id="sb-play" aria-label="play/pause">⏸</button>
+            </div>
+          </div>
+          <div class="sb__screen" id="sb-screen"></div>
+        </div>
+
+        <!-- Output -->
+        <div class="slate" style="margin-top:18px">
+          <div class="slate__label" data-i18n="slateLabel">Salin ke Gemini</div>
+          <div class="slate__body" id="out"></div>
+        </div>
+
+        <div class="row-actions">
+          <button class="btn btn--primary" id="copy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <span data-i18n="copy">Salin prompt</span>
+          </button>
+          <a class="btn" href="https://gemini.google.com/" target="_blank" rel="noopener" data-i18n="openGemini">Buka Gemini ↗</a>
+          <span class="btn__count"><span id="count">0</span> <span data-i18n="chars">aksara</span></span>
+        </div>
+
+        <div class="tip">
+          <span>🎬</span>
+          <span><b data-i18n="tipB">Mudah = lebih kemas.</b> <span data-i18n="tip">Cuba nama kelab, pasukan, produk, atau acara projek awak.</span></span>
+        </div>
+      </section>
+    </div>
+  </main>
+
+<script>
+  /* ---------------------------------------------------------------------
+     Static UI strings (two languages). Field labels/pills live in FIELDS;
+     the per-concept prompt text lives in CONCEPTS[...].build.
+     --------------------------------------------------------------------- */
+  const UI = {
+    ms: {
+      brand: "Pengarah Video AI", navHome: "Utama",
+      kicker: "Video Sinematik 10 Saat", title: "Reka video AI 10 saat awak",
+      sub: "Pilih satu konsep, isi butiran (atau ketik pil cadangan), dan alat ini menulis prompt video sinematik 10 saat. Salin ke <strong>Gemini</strong> untuk menjana video.",
+      panelIn: "Reka video", conceptLead: "Pilih konsep video", reset: "↺ Contoh",
+      sbTitle: "Pratonton 10 saat", slateLabel: "Salin ke Gemini", openGemini: "Buka Gemini ↗",
+      copy: "Salin prompt", copied: "Disalin!", chars: "aksara",
+      tipB: "Mudah = lebih kemas.", tip: "Cuba nama kelab, pasukan, produk, atau acara projek awak."
+    },
+    en: {
+      brand: "AI Video Director", navHome: "Home",
+      kicker: "10-Second Cinematic Video", title: "Design your 10-second AI video",
+      sub: "Pick a concept, fill in the details (or tap a suggestion pill), and this tool writes a 10-second cinematic video prompt. Copy it into <strong>Gemini</strong> to generate the video.",
+      panelIn: "Design the video", conceptLead: "Pick a video concept", reset: "↺ Example",
+      sbTitle: "10-second preview", slateLabel: "Copy into Gemini", openGemini: "Open Gemini ↗",
+      copy: "Copy prompt", copied: "Copied!", chars: "characters",
+      tipB: "Simpler = cleaner.", tip: "Try your club, team, product, or school event name."
+    }
+  };
+
+  /* Field registry — each gives a label, hint, placeholder and suggestion pills.
+     Shared fields (colour…background) are reused by every concept. */
+  const FIELDS = {
+    material: {
+      label: { ms: "Diperbuat daripada", en: "Made of" },
+      hint:  { ms: "Bahan yang membentuk huruf.", en: "The material that forms the letters." },
+      ph:    { ms: "cth. pensel warna", en: "e.g. colour pencils" },
+      pills: { ms: ["pensel warna", "kiub ais", "coklat", "blok mainan", "konfeti", "kelopak bunga", "tauhu"],
+               en: ["colour pencils", "ice cubes", "chocolate", "toy bricks", "confetti", "flower petals", "tofu"] }
+    },
+    word: {
+      label: { ms: "Perkataan", en: "Word" }, max: 14,
+      hint:  { ms: "Satu perkataan pendek — pendek lebih kemas.", en: "One short word — shorter is cleaner." },
+      ph:    { ms: "cth. SENI", en: "e.g. ART" },
+      pills: { ms: ["SENI", "JUARA", "KELAB", "2026", "CINTA"], en: ["ART", "WIN", "CLUB", "2026", "LOVE"] }
+    },
+    object: {
+      label: { ms: "Produk / objek", en: "Product / object" },
+      hint:  { ms: "Hero utama video.", en: "The hero of the video." },
+      ph:    { ms: "cth. sebotol minuman", en: "e.g. a drink bottle" },
+      pills: { ms: ["sebotol minuman", "kasut sneaker", "telefon pintar", "jam tangan", "sebotol minyak wangi", "sebuah buku"],
+               en: ["a drink bottle", "a sneaker", "a smartphone", "a watch", "a perfume bottle", "a book"] }
+    },
+    tagline: {
+      label: { ms: "Tagline / perkataan", en: "Tagline / word" }, max: 18,
+      hint:  { ms: "Teks pendek yang muncul di hujung.", en: "Short text that appears at the end." },
+      ph:    { ms: "cth. SEGAR", en: "e.g. FRESH" },
+      pills: { ms: ["SEGAR", "BAHARU", "JUARA", "#1"], en: ["FRESH", "NEW", "WIN", "#1"] }
+    },
+    element: {
+      label: { ms: "Elemen", en: "Elements" },
+      hint:  { ms: "Bentuk yang mengalir membentuk logo.", en: "Shapes that flow into the logo." },
+      ph:    { ms: "cth. bentuk geometri", en: "e.g. geometric shapes" },
+      pills: { ms: ["bentuk geometri", "percikan cat", "jaluran cahaya", "kepingan kertas", "asap lembut"],
+               en: ["geometric shapes", "paint splashes", "light streaks", "paper cut-outs", "soft smoke"] }
+    },
+    logoword: {
+      label: { ms: "Nama logo", en: "Logo name" }, max: 16,
+      hint:  { ms: "Perkataan akhir logo.", en: "The final logo word." },
+      ph:    { ms: "cth. NOVA", en: "e.g. NOVA" },
+      pills: { ms: ["NOVA", "KELAB SAINS", "JUARA", "2026"], en: ["NOVA", "SCIENCE CLUB", "WIN", "2026"] }
+    },
+    subject: {
+      label: { ms: "Subjek", en: "Subject" },
+      hint:  { ms: "Apa yang tumbuh atau terbina.", en: "What grows or gets built." },
+      ph:    { ms: "cth. sepohon pokok", en: "e.g. a tree" },
+      pills: { ms: ["sepohon pokok", "sekuntum bunga", "sebuah bandar", "lukisan", "kristal ais", "awan"],
+               en: ["a tree", "a flower", "a city", "a drawing", "ice crystals", "clouds"] }
+    },
+    process: {
+      label: { ms: "Proses", en: "Process" },
+      hint:  { ms: "Bagaimana ia berubah dari masa ke masa.", en: "How it changes over time." },
+      ph:    { ms: "cth. tumbuh dari benih", en: "e.g. grows from a seed" },
+      pills: { ms: ["tumbuh dari benih", "terbina tingkat demi tingkat", "dilukis garis demi garis", "berkembang mekar", "membeku perlahan"],
+               en: ["grows from a seed", "builds floor by floor", "is drawn line by line", "blooms open", "freezes slowly"] }
+    },
+    character: {
+      label: { ms: "Watak / objek", en: "Character / object" },
+      hint:  { ms: "Apa yang digerakkan rangka demi rangka.", en: "What gets animated frame by frame." },
+      ph:    { ms: "cth. watak tanah liat", en: "e.g. a clay character" },
+      pills: { ms: ["watak tanah liat", "haiwan kertas", "robot kadbod", "bunga felt", "makanan plastisin"],
+               en: ["a clay character", "a paper animal", "a cardboard robot", "a felt flower", "a plasticine snack"] }
+    },
+    action: {
+      label: { ms: "Aksi", en: "Action" },
+      hint:  { ms: "Apa yang watak buat.", en: "What the character does." },
+      ph:    { ms: "cth. melambai", en: "e.g. waving" },
+      pills: { ms: ["melambai", "menari", "berjalan", "bertukar bentuk", "melompat"],
+               en: ["waving", "dancing", "walking", "morphing", "jumping"] }
+    },
+    idea: {
+      label: { ms: "Idea / topik", en: "Idea / topic" }, max: 48,
+      hint:  { ms: "Apa yang anda mahu terangkan.", en: "What you want to explain." },
+      ph:    { ms: "cth. cara kitar semula", en: "e.g. how recycling works" },
+      pills: { ms: ["cara kitar semula", "bagaimana AI belajar", "kitaran air", "tips belajar pintar", "cara aplikasi kami berfungsi"],
+               en: ["how recycling works", "how AI learns", "the water cycle", "smart study tips", "how our app works"] }
+    },
+    icons: {
+      label: { ms: "Ikon utama", en: "Key icons" },
+      hint:  { ms: "Simbol mudah yang muncul.", en: "Simple symbols that appear." },
+      ph:    { ms: "cth. daun dan titisan air", en: "e.g. a leaf and a water drop" },
+      pills: { ms: ["daun dan titisan air", "otak dan data", "telefon dan awan", "buku dan mentol", "roda gigi dan anak panah"],
+               en: ["a leaf and a water drop", "a brain and data", "a phone and a cloud", "a book and a lightbulb", "gears and arrows"] }
+    },
+    colour: {
+      label: { ms: "Warna", en: "Colour" },
+      hint:  { ms: "Warna utama video.", en: "The main colour of the video." },
+      ph:    { ms: "cth. pelangi cerah", en: "e.g. bright rainbow" },
+      pills: { ms: ["pelangi cerah", "emas hangat", "pastel hangat", "biru pastel", "hijau lembut", "merah jambu neon", "hitam putih", "jingga senja"],
+               en: ["bright rainbow", "warm gold", "warm pastel", "pastel blue", "soft green", "neon pink", "black & white", "sunset orange"] }
+    },
+    mood: {
+      label: { ms: "Mood", en: "Mood" },
+      hint:  { ms: "Perasaan keseluruhan.", en: "The overall feeling." },
+      ph:    { ms: "cth. ceria dan kreatif", en: "e.g. cheerful and creative" },
+      pills: { ms: ["ceria dan kreatif", "ceria dan comel", "sinematik dan dramatik", "tenang dan berangan", "bertenaga dan berani", "minimal dan bersih", "retro dan nostalgia"],
+               en: ["cheerful and creative", "cheerful and cute", "cinematic and dramatic", "calm and dreamy", "energetic and bold", "minimal and clean", "retro and nostalgic"] }
+    },
+    lighting: {
+      label: { ms: "Pencahayaan", en: "Lighting" },
+      hint:  { ms: "Bagaimana cahaya jatuh.", en: "How the light falls." },
+      ph:    { ms: "cth. cahaya siang lembut", en: "e.g. soft daylight" },
+      pills: { ms: ["cahaya siang lembut", "sinar neon", "cahaya senja keemasan", "lampu sorot studio", "bayang dramatik", "cahaya berwarna"],
+               en: ["soft daylight", "neon glow", "golden hour", "studio spotlight", "moody shadows", "colourful gels"] }
+    },
+    camera: {
+      label: { ms: "Pergerakan kamera", en: "Camera motion" },
+      hint:  { ms: "Bagaimana kamera bergerak.", en: "How the camera moves." },
+      ph:    { ms: "cth. zoom masuk perlahan", en: "e.g. slow zoom in" },
+      pills: { ms: ["zoom masuk perlahan", "mengorbit sekeliling", "pandangan atas", "pan lembut", "tujah dramatik", "kamera statik"],
+               en: ["slow zoom in", "orbit around", "top-down view", "gentle pan", "dramatic push-in", "static locked"] }
+    },
+    background: {
+      label: { ms: "Latar belakang", en: "Background" },
+      hint:  { ms: "Apa di belakang subjek.", en: "What sits behind the subject." },
+      ph:    { ms: "cth. studio putih bersih", en: "e.g. clean studio white" },
+      pills: { ms: ["studio putih bersih", "ruang gelap", "gradien lembut", "bokeh kabur", "warna sepadan", "permukaan bertekstur"],
+               en: ["clean studio white", "dark void", "soft gradient", "blurred bokeh", "matching colour", "textured surface"] }
+    }
+  };
+
+  const cap = s => (s || "").charAt(0).toUpperCase() + (s || "").slice(1);
+  const SHARED = ["colour", "mood", "lighting", "camera", "background"];
+
+  /* The four video concepts. Each defines its field order, a full bilingual
+     example (also used as the live fallback so the slate is never blank),
+     the storyboard beats, which field drives the on-screen word, and the
+     prompt builder. */
+  const CONCEPTS = {
+    spell: {
+      ico: "🔤",
+      name: { ms: "Eja perkataan", en: "Spell a word" },
+      desc: { ms: "Bahan menyusun jadi perkataan", en: "Material assembles into a word" },
+      fields: ["material", "word", ...SHARED],
+      wordField: "word",
+      example: {
+        ms: { material: "pensel warna", word: "SENI", colour: "pelangi cerah", mood: "ceria dan kreatif", lighting: "cahaya siang lembut", camera: "zoom masuk perlahan", background: "studio putih bersih" },
+        en: { material: "colour pencils", word: "ART", colour: "bright rainbow", mood: "cheerful and creative", lighting: "soft daylight", camera: "slow zoom in", background: "clean studio white" }
+      },
+      storyboard: [
+        { viz: "drop",      cap: { ms: "1–2s · Setitik air jatuh ke atas bahan", en: "1–2s · A drop falls onto the material" } },
+        { viz: "pieces",    cap: { ms: "3–5s · Kepingan kecil menyusun diri", en: "3–5s · Small pieces arrange themselves" } },
+        { viz: "word",      cap: { ms: "6–8s · Kepingan membentuk perkataan", en: "6–8s · Pieces form the word" } },
+        { viz: "wordFreeze",cap: { ms: "9–10s · Cahaya melintas, kemudian pegun", en: "9–10s · Light sweeps, then freezes" } }
+      ],
+      build(v, lang) {
+        const W = (v.word || "").toUpperCase();
+        if (lang === "ms") return [
+`Buat video sinematik 10 saat.`,
+`Subjek: huruf 3D diperbuat daripada ${v.material} sebenar, mengeja perkataan "${W}".\nWarna: ${v.colour}. Mood: ${v.mood}.\nPencahayaan: ${v.lighting}. Kamera: ${v.camera}. Latar: ${v.background}.`,
+`Papan cerita 10 saat:\n1–2s: Kamera: ${v.camera}. Setitik air jatuh ke atas ${v.material} dan menghasilkan riak lembut.\n3–5s: Banyak kepingan kecil ${v.material} meluncur dan menyusun diri seperti piksel.\n6–8s: Kepingan bergabung membentuk perkataan 3D "${W}".\n9–10s: Latar ${v.background}. Cahaya halus melintasi perkataan, kemudian pegun.`,
+`Peraturan: Satu-satunya teks ialah "${W}", diperbuat daripada ${v.material} sebenar (objek 3D, bukan teks 2D). Tiada logo atau tulisan lain.`
+        ].join("\n\n");
+        return [
+`Create a 10-second cinematic video.`,
+`Subject: 3D letters made of real ${v.material}, spelling the word "${W}".\nColour: ${v.colour}. Mood: ${v.mood}.\nLighting: ${v.lighting}. Camera: ${v.camera}. Background: ${v.background}.`,
+`10-second storyboard:\n1–2s: Camera: ${v.camera}. A water drop falls onto the ${v.material} and makes soft ripples.\n3–5s: Many small pieces of ${v.material} glide and arrange themselves like pixels.\n6–8s: The pieces merge into the 3D word "${W}".\n9–10s: Background: ${v.background}. A soft light sweeps across the word, then it freezes.`,
+`Rule: The only text is "${W}", made of real ${v.material} (3D objects, not flat 2D text). No logos or other writing.`
+        ].join("\n\n");
+      }
+    },
+
+    product: {
+      ico: "📦",
+      name: { ms: "Dedah produk", en: "Product reveal" },
+      desc: { ms: "Objek hero didedahkan dengan cahaya", en: "A hero object revealed with light" },
+      fields: ["object", "tagline", ...SHARED],
+      wordField: "tagline",
+      example: {
+        ms: { object: "sebotol minuman", tagline: "SEGAR", colour: "biru pastel", mood: "sinematik dan dramatik", lighting: "lampu sorot studio", camera: "mengorbit sekeliling", background: "ruang gelap" },
+        en: { object: "a drink bottle", tagline: "FRESH", colour: "pastel blue", mood: "cinematic and dramatic", lighting: "studio spotlight", camera: "orbit around", background: "dark void" }
+      },
+      storyboard: [
+        { viz: "objDark",   cap: { ms: "1–2s · Lampu sorot mendedahkan objek", en: "1–2s · A spotlight reveals the object" } },
+        { viz: "objSpin",   cap: { ms: "3–5s · Objek berpusing ke pandangan penuh", en: "3–5s · The object turns into view" } },
+        { viz: "objLit",    cap: { ms: "6–8s · Cahaya memukul, warna menyerlah", en: "6–8s · Light hits, colour pops" } },
+        { viz: "wordFreeze",cap: { ms: "9–10s · Tagline muncul, kemudian pegun", en: "9–10s · Tagline appears, then freezes" } }
+      ],
+      build(v, lang) {
+        const T = (v.tagline || "").toUpperCase();
+        if (lang === "ms") return [
+`Buat video produk sinematik 10 saat.`,
+`Subjek: ${v.object} sebagai hero utama.\nWarna: ${v.colour}. Mood: ${v.mood}.\nPencahayaan: ${v.lighting}. Kamera: ${v.camera}. Latar: ${v.background}.`,
+`Papan cerita 10 saat:\n1–2s: Babak gelap. Lampu sorot perlahan mendedahkan ${v.object} dalam siluet.\n3–5s: Kamera: ${v.camera}. ${cap(v.object)} berpusing ke pandangan penuh ketika cahaya meningkat.\n6–8s: ${cap(v.lighting)} memukul ${v.object}, warna ${v.colour} menyerlah.\n9–10s: Teks "${T}" muncul kemas di sebelah ${v.object}, kemudian pegun.`,
+`Peraturan: Kekalkan ${v.object} sebagai satu-satunya hero. Latar ${v.background}. Tiada teks lain kecuali "${T}".`
+        ].join("\n\n");
+        return [
+`Create a 10-second cinematic product video.`,
+`Subject: ${v.object} as the hero product.\nColour: ${v.colour}. Mood: ${v.mood}.\nLighting: ${v.lighting}. Camera: ${v.camera}. Background: ${v.background}.`,
+`10-second storyboard:\n1–2s: Dark scene. A spotlight slowly reveals ${v.object} in silhouette.\n3–5s: Camera: ${v.camera}. ${cap(v.object)} turns into full view as the light builds.\n6–8s: ${cap(v.lighting)} hits ${v.object}, and the ${v.colour} colours pop.\n9–10s: The text "${T}" appears cleanly beside ${v.object}, then it freezes.`,
+`Rule: Keep ${v.object} as the only hero. Background: ${v.background}. No other text except "${T}".`
+        ].join("\n\n");
+      }
+    },
+
+    logo: {
+      ico: "✨",
+      name: { ms: "Morf logo", en: "Logo morph" },
+      desc: { ms: "Elemen mengalir membentuk logo", en: "Elements flow into a logo" },
+      fields: ["element", "logoword", ...SHARED],
+      wordField: "logoword",
+      example: {
+        ms: { element: "bentuk geometri", logoword: "NOVA", colour: "emas hangat", mood: "minimal dan bersih", lighting: "cahaya senja keemasan", camera: "tujah dramatik", background: "gradien lembut" },
+        en: { element: "geometric shapes", logoword: "NOVA", colour: "warm gold", mood: "minimal and clean", lighting: "golden hour", camera: "dramatic push-in", background: "soft gradient" }
+      },
+      storyboard: [
+        { viz: "shapes",    cap: { ms: "1–2s · Elemen berselerak terapung", en: "1–2s · Elements float scattered" } },
+        { viz: "shapes",    cap: { ms: "3–5s · Elemen mengalir ke tengah", en: "3–5s · Elements flow to the centre" } },
+        { viz: "word",      cap: { ms: "6–8s · Tersusun menjadi logo", en: "6–8s · They lock into the logo" } },
+        { viz: "wordFreeze",cap: { ms: "9–10s · Cahaya melintas logo", en: "9–10s · A shine sweeps the logo" } }
+      ],
+      build(v, lang) {
+        const LW = (v.logoword || "").toUpperCase();
+        if (lang === "ms") return [
+`Buat animasi logo sinematik 10 saat.`,
+`Subjek: ${v.element} yang mengalir dan bergabung membentuk logo "${LW}".\nWarna: ${v.colour}. Mood: ${v.mood}.\nPencahayaan: ${v.lighting}. Kamera: ${v.camera}. Latar: ${v.background}.`,
+`Papan cerita 10 saat:\n1–2s: ${cap(v.element)} terapung berselerak di skrin.\n3–5s: Kamera: ${v.camera}. ${cap(v.element)} mengalir dan bergerak ke tengah.\n6–8s: Semua tersusun kemas menjadi logo "${LW}".\n9–10s: Cahaya halus melintasi logo, kemudian pegun.`,
+`Peraturan: Akhiri dengan logo "${LW}" yang bersih dan jelas. Latar ${v.background}. Tiada teks lain.`
+        ].join("\n\n");
+        return [
+`Create a 10-second cinematic logo animation.`,
+`Subject: ${v.element} that flow and merge to form the logo "${LW}".\nColour: ${v.colour}. Mood: ${v.mood}.\nLighting: ${v.lighting}. Camera: ${v.camera}. Background: ${v.background}.`,
+`10-second storyboard:\n1–2s: ${cap(v.element)} float scattered across the screen.\n3–5s: Camera: ${v.camera}. The ${v.element} flow and move toward the centre.\n6–8s: They lock neatly into the logo "${LW}".\n9–10s: A soft light sweeps across the logo, then it freezes.`,
+`Rule: End on a clean, readable logo "${LW}". Background: ${v.background}. No other text.`
+        ].join("\n\n");
+      }
+    },
+
+    timelapse: {
+      ico: "⏳",
+      name: { ms: "Time-lapse", en: "Time-lapse" },
+      desc: { ms: "Sesuatu tumbuh atau terbina, dipercepat", en: "Something grows or builds, sped up" },
+      fields: ["subject", "process", ...SHARED],
+      wordField: null,
+      example: {
+        ms: { subject: "sepohon pokok", process: "tumbuh dari benih", colour: "hijau lembut", mood: "tenang dan berangan", lighting: "cahaya senja keemasan", camera: "kamera statik", background: "gradien lembut" },
+        en: { subject: "a tree", process: "grows from a seed", colour: "soft green", mood: "calm and dreamy", lighting: "golden hour", camera: "static locked", background: "soft gradient" }
+      },
+      storyboard: [
+        { viz: "grow", cap: { ms: "1–2s · Bermula kecil pada peringkat awal", en: "1–2s · Starts small at the beginning" } },
+        { viz: "grow", cap: { ms: "3–5s · Masa dipercepat, ia berkembang", en: "3–5s · Time speeds up, it grows" } },
+        { viz: "grow", cap: { ms: "6–8s · Mencapai bentuk penuh", en: "6–8s · Reaches its full form" } },
+        { viz: "grow", cap: { ms: "9–10s · Perlahan dan pegun di hujung", en: "9–10s · Slows and settles at the end" } }
+      ],
+      build(v, lang) {
+        if (lang === "ms") return [
+`Buat video time-lapse sinematik 10 saat.`,
+`Subjek: ${v.subject}, dirakam secara time-lapse (masa dipercepat) sambil ia ${v.process}.\nWarna: ${v.colour}. Mood: ${v.mood}.\nPencahayaan: ${v.lighting}. Kamera: ${v.camera}. Latar: ${v.background}.`,
+`Papan cerita 10 saat:\n1–2s: ${cap(v.subject)} bermula kecil pada peringkat awal.\n3–5s: Kamera: ${v.camera}. Masa dipercepat dan ia ${v.process}.\n6–8s: ${cap(v.subject)} mencapai bentuk penuh.\n9–10s: Pergerakan perlahan dan pegun pada keadaan akhir.`,
+`Peraturan: Kekalkan rupa time-lapse yang lancar (perubahan berterusan, tiada lompatan janggal). Latar ${v.background}. Tiada teks.`
+        ].join("\n\n");
+        return [
+`Create a 10-second cinematic time-lapse video.`,
+`Subject: ${v.subject}, captured as a time-lapse (time sped up) as it ${v.process}.\nColour: ${v.colour}. Mood: ${v.mood}.\nLighting: ${v.lighting}. Camera: ${v.camera}. Background: ${v.background}.`,
+`10-second storyboard:\n1–2s: ${cap(v.subject)} starts small at the very beginning.\n3–5s: Camera: ${v.camera}. Time speeds up and it ${v.process}.\n6–8s: ${cap(v.subject)} reaches its full form.\n9–10s: The motion slows and settles on the final state.`,
+`Rule: Keep a smooth time-lapse look (continuous change, no awkward jumps). Background: ${v.background}. No text.`
+        ].join("\n\n");
+      }
+    },
+
+    stopmotion: {
+      ico: "🎞️",
+      name: { ms: "Stop-motion", en: "Stop-motion" },
+      desc: { ms: "Gaya buatan tangan, rangka demi rangka", en: "Handmade, frame-by-frame style" },
+      fields: ["character", "action", ...SHARED],
+      wordField: null,
+      example: {
+        ms: { character: "watak tanah liat", action: "melambai", colour: "pastel hangat", mood: "ceria dan comel", lighting: "cahaya siang lembut", camera: "kamera statik", background: "permukaan bertekstur" },
+        en: { character: "a clay character", action: "waving", colour: "warm pastel", mood: "cheerful and cute", lighting: "soft daylight", camera: "static locked", background: "textured surface" }
+      },
+      storyboard: [
+        { viz: "clay", cap: { ms: "1–2s · Watak muncul, gerakan tersentak", en: "1–2s · The character pops in, jerky motion" } },
+        { viz: "clay", cap: { ms: "3–5s · Bergerak rangka demi rangka", en: "3–5s · Moves frame by frame" } },
+        { viz: "clay", cap: { ms: "6–8s · Watak melakukan aksi", en: "6–8s · The character does the action" } },
+        { viz: "clay", cap: { ms: "9–10s · Pose akhir, tekstur tangan", en: "9–10s · Final pose, handmade texture" } }
+      ],
+      build(v, lang) {
+        if (lang === "ms") return [
+`Buat video stop-motion sinematik 10 saat.`,
+`Subjek: ${v.character} dalam gaya stop-motion buatan tangan, sedang ${v.action}.\nWarna: ${v.colour}. Mood: ${v.mood}.\nPencahayaan: ${v.lighting}. Kamera: ${v.camera}. Latar: ${v.background}.`,
+`Papan cerita 10 saat:\n1–2s: ${cap(v.character)} muncul dalam bingkai dengan gerakan tersentak-sentak khas stop-motion.\n3–5s: Kamera: ${v.camera}. ${cap(v.character)} mula bergerak rangka demi rangka.\n6–8s: ${cap(v.character)} ${v.action} dengan jelas.\n9–10s: Babak pegun pada pose akhir; tekstur buatan tangan kelihatan.`,
+`Peraturan: Kekalkan rupa stop-motion buatan tangan (kira-kira 12–15 rangka sesaat, gerakan tidak terlalu lancar). Latar ${v.background}. Tiada teks.`
+        ].join("\n\n");
+        return [
+`Create a 10-second cinematic stop-motion video.`,
+`Subject: ${v.character} in a handmade stop-motion style, ${v.action}.\nColour: ${v.colour}. Mood: ${v.mood}.\nLighting: ${v.lighting}. Camera: ${v.camera}. Background: ${v.background}.`,
+`10-second storyboard:\n1–2s: ${cap(v.character)} appears in frame with the signature jerky stop-motion movement.\n3–5s: Camera: ${v.camera}. ${cap(v.character)} starts moving frame by frame.\n6–8s: ${cap(v.character)} is clearly ${v.action}.\n9–10s: Freeze on the final pose; the handmade texture is visible.`,
+`Rule: Keep the handmade stop-motion look (about 12–15 frames per second, not too smooth). Background: ${v.background}. No text.`
+        ].join("\n\n");
+      }
+    },
+
+    explainer: {
+      ico: "🧩",
+      name: { ms: "Penerang idea", en: "Explainer" },
+      desc: { ms: "Ikon bergerak menerangkan idea", en: "Animated icons explain an idea" },
+      fields: ["idea", "icons", ...SHARED],
+      wordField: null,
+      example: {
+        ms: { idea: "cara kitar semula", icons: "daun dan titisan air", colour: "hijau lembut", mood: "ceria dan kreatif", lighting: "cahaya siang lembut", camera: "zoom masuk perlahan", background: "studio putih bersih" },
+        en: { idea: "how recycling works", icons: "a leaf and a water drop", colour: "soft green", mood: "cheerful and creative", lighting: "soft daylight", camera: "slow zoom in", background: "clean studio white" }
+      },
+      storyboard: [
+        { viz: "icons", cap: { ms: "1–2s · Ikon muncul satu demi satu", en: "1–2s · Icons pop in one by one" } },
+        { viz: "icons", cap: { ms: "3–5s · Anak panah menyambungkan ikon", en: "3–5s · Arrows connect the icons" } },
+        { viz: "icons", cap: { ms: "6–8s · Idea bergabung dengan jelas", en: "6–8s · The idea comes together" } },
+        { viz: "icons", cap: { ms: "9–10s · Susun atur akhir, kemudian pegun", en: "9–10s · Final layout, then freezes" } }
+      ],
+      build(v, lang) {
+        if (lang === "ms") return [
+`Buat video penerang (explainer) animasi 2D sinematik 10 saat.`,
+`Subjek: grafik gerak ringkas yang menerangkan "${v.idea}", menggunakan ikon seperti ${v.icons}.\nWarna: ${v.colour}. Mood: ${v.mood}.\nPencahayaan: ${v.lighting}. Kamera: ${v.camera}. Latar: ${v.background}.`,
+`Papan cerita 10 saat:\n1–2s: Ikon mudah (${v.icons}) muncul satu demi satu.\n3–5s: Kamera: ${v.camera}. Anak panah menyambungkan ikon untuk menunjukkan hubungannya.\n6–8s: Semua bahagian bergabung menerangkan "${v.idea}" dengan jelas.\n9–10s: Susun atur akhir yang kemas, kemudian pegun.`,
+`Peraturan: Gaya grafik gerak (motion graphic) yang bersih dan rata. Latar ${v.background}. Pastikan idea mudah difahami; teks ringkas sahaja jika perlu.`
+        ].join("\n\n");
+        return [
+`Create a 10-second cinematic 2D explainer (motion-graphic) video.`,
+`Subject: simple animated graphics explaining "${v.idea}", using icons such as ${v.icons}.\nColour: ${v.colour}. Mood: ${v.mood}.\nLighting: ${v.lighting}. Camera: ${v.camera}. Background: ${v.background}.`,
+`10-second storyboard:\n1–2s: Simple icons (${v.icons}) pop in one by one.\n3–5s: Camera: ${v.camera}. Arrows connect the icons to show how they relate.\n6–8s: All the parts come together to explain "${v.idea}" clearly.\n9–10s: A tidy final layout, then it freezes.`,
+`Rule: Clean, flat motion-graphic style. Background: ${v.background}. Keep the idea easy to understand; only minimal text if needed.`
+        ].join("\n\n");
+      }
+    }
+  };
+
+  /* ----------------------------- State ----------------------------------- */
+  let lang = "ms";
+  let concept = "spell";
+  const vals = {};            // current field values (keyed by field name)
+  const touched = new Set();  // fields the student has changed (don't auto-overwrite)
+  let lastText = "";
+
+  const blocksEl = document.getElementById("blocks");
+  const conceptsEl = document.getElementById("concepts");
+  const screen = document.getElementById("sb-screen");
+  const out = document.getElementById("out");
+  const countEl = document.getElementById("count");
+  const copyBtn = document.getElementById("copy");
+
+  const escapeHtml = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+  const escapeAttr = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+
+  /* Resolve a field for output: typed value, else the concept's example. */
+  function resolved(k) {
+    const raw = (vals[k] ?? "").trim();
+    return raw || CONCEPTS[concept].example[lang][k] || "";
+  }
+
+  /* Fill any unset (or untouched) field with the concept example so the slate
+     is never blank. force=true refills everything (the "↺ Example" button). */
+  function fillDefaults(force) {
+    const ex = CONCEPTS[concept].example[lang];
+    CONCEPTS[concept].fields.forEach(k => {
+      if (force || !touched.has(k) || vals[k] == null || vals[k] === "") vals[k] = ex[k];
+    });
+  }
+
+  /* ----------------------------- Concept picker -------------------------- */
+  function renderConcepts() {
+    conceptsEl.innerHTML = Object.entries(CONCEPTS).map(([key, c]) =>
+      `<button type="button" class="concept" data-concept="${key}" aria-pressed="${key === concept}">
+         <span class="concept__ico" aria-hidden="true">${c.ico}</span>
+         <span><span class="concept__t">${escapeHtml(c.name[lang])}</span><span class="concept__d">${escapeHtml(c.desc[lang])}</span></span>
+       </button>`).join("");
+    conceptsEl.querySelectorAll(".concept").forEach(b =>
+      b.addEventListener("click", () => setConcept(b.dataset.concept)));
+  }
+
+  /* ----------------------------- Field blocks ---------------------------- */
+  function blockHtml(k, i) {
+    const f = FIELDS[k];
+    const v = vals[k] ?? "";
+    const input = `<input class="field" id="f-${k}" ${f.max ? `maxlength="${f.max}"` : ""} value="${escapeAttr(v)}" placeholder="${escapeAttr(f.ph[lang])}">`;
+    const pills = `<div class="pills">${f.pills[lang].map(p =>
+      `<button type="button" class="pill" data-field="${k}" data-val="${escapeAttr(p)}">${escapeHtml(p)}</button>`).join("")}</div>`;
+    return `<div class="block" data-field="${k}">
+        <div class="block__tab"><span class="n">${i+1}</span><span>${escapeHtml(f.label[lang])}</span></div>
+        ${input}${pills}
+        <span class="block__hint">${escapeHtml(f.hint[lang])}</span>
+      </div>`;
+  }
+
+  function setField(k, value) {
+    vals[k] = value;
+    touched.add(k);
+    const inp = document.getElementById("f-" + k);
+    if (inp) inp.value = value;
+    render();
+    markPills();
+  }
+
+  function renderBlocks() {
+    blocksEl.innerHTML = CONCEPTS[concept].fields.map((k, i) => blockHtml(k, i)).join("");
+    CONCEPTS[concept].fields.forEach(k => {
+      document.getElementById("f-" + k).addEventListener("input", e => {
+        vals[k] = e.target.value; touched.add(k);
+        render(); markPills();
+      });
+    });
+    blocksEl.querySelectorAll(".pill").forEach(p =>
+      p.addEventListener("click", () => setField(p.dataset.field, p.dataset.val)));
+    markPills();
+  }
+
+  function markPills() {
+    blocksEl.querySelectorAll(".pill").forEach(p => {
+      const on = (vals[p.dataset.field] || "").trim().toLowerCase() === p.dataset.val.trim().toLowerCase();
+      p.setAttribute("aria-pressed", String(on));
+    });
+  }
+
+  /* ----------------------------- Storyboard ------------------------------ */
+  const SHAPE_POS = [[6,18],[64,6],[120,40],[28,74],[140,12],[92,80]];
+
+  function vizHtml(viz) {
+    switch (viz) {
+      case "drop":       return `<div class="plate"><div class="drop"></div></div>`;
+      case "pieces":     return `<div class="pieces">${"<i></i>".repeat(12)}</div>`;
+      case "word":       return `<div class="word" data-word></div>`;
+      case "wordFreeze": return `<div class="word word--freeze" data-word></div>`;
+      case "objDark":    return `<div class="obj obj--dark"></div>`;
+      case "objSpin":    return `<div class="obj obj--spin"></div>`;
+      case "objLit":     return `<div class="obj obj--lit"></div>`;
+      case "shapes":     return `<div class="shapes">${SHAPE_POS.map(([l,t]) => `<i style="left:${l}px;top:${t}px"></i>`).join("")}</div>`;
+      case "grow":       return `<div class="grow">${"<i></i>".repeat(5)}</div>`;
+      case "clay":       return `<div class="clay"><span></span><span></span></div>`;
+      case "icons":      return `<div class="icons"><b>💡</b><span></span><b>⚙️</b><span></span><b>✅</b></div>`;
+      default:           return "";
+    }
+  }
+
+  function renderStoryboard() {
+    const c = CONCEPTS[concept];
+    screen.innerHTML = c.storyboard.map((b, i) =>
+      `<div class="beat ${i === 0 ? "on" : ""}" data-step="${i+1}">${vizHtml(b.viz)}<div class="beat__cap">${escapeHtml(b.cap[lang])}</div></div>`).join("");
+    screen.querySelectorAll(".pieces i").forEach((el, i) => el.style.animationDelay = (i * 90) + "ms");
+    screen.querySelectorAll(".shapes i").forEach((el, i) => el.style.animationDelay = (i * 180) + "ms");
+    screen.querySelectorAll(".grow i").forEach((el, i) => el.style.animationDelay = (i * 160) + "ms");
+    screen.querySelectorAll(".icons b").forEach((el, i) => el.style.animationDelay = (i * 220) + "ms");
+    step = 1;
+  }
+
+  /* ----------------------------- Output ---------------------------------- */
+  function render() {
+    const c = CONCEPTS[concept];
+    const v = {};
+    c.fields.forEach(k => v[k] = resolved(k));
+    lastText = c.build(v, lang);
+    out.innerHTML = lastText.split("\n\n").map(b =>
+      `<div class="slate-block">${escapeHtml(b).replace(/\n/g, "<br>")}</div>`).join("");
+    countEl.textContent = lastText.length;
+    if (c.wordField) {
+      const W = (v[c.wordField] || "").toUpperCase();
+      screen.querySelectorAll("[data-word]").forEach(el => el.textContent = W);
+    }
+  }
+
+  /* ----------------------------- Orchestration --------------------------- */
+  function applyConcept() {
+    fillDefaults(false);
+    conceptsEl.querySelectorAll(".concept").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.concept === concept)));
+    renderBlocks();
+    renderStoryboard();
+    render();
+    restartPlay();
+  }
+  function setConcept(key) {
+    if (!CONCEPTS[key]) return;
+    concept = key;
+    applyConcept();
+  }
+  function resetExample() {
+    touched.clear();
+    fillDefaults(true);
+    renderBlocks();
+    render();
+  }
+
+  /* ----------------------------- Playback -------------------------------- */
+  let step = 1, playing = true, timer = null;
+  const dots = [...document.querySelectorAll("#sb-dots button")];
+  function showStep(n) {
+    step = n;
+    screen.querySelectorAll(".beat").forEach(b => b.classList.toggle("on", Number(b.dataset.step) === n));
+    dots.forEach(d => d.setAttribute("aria-current", String(Number(d.dataset.step) === n)));
+  }
+  function tick() { showStep(step % 4 + 1); }
+  function play() { playing = true; document.getElementById("sb-play").textContent = "⏸"; clearInterval(timer); timer = setInterval(tick, 3200); }
+  function pause() { playing = false; document.getElementById("sb-play").textContent = "▶"; clearInterval(timer); }
+  function restartPlay() { showStep(1); if (playing) play(); }
+  document.getElementById("sb-play").addEventListener("click", () => playing ? pause() : play());
+  dots.forEach(d => d.addEventListener("click", () => { pause(); showStep(Number(d.dataset.step)); }));
+  document.getElementById("reset").addEventListener("click", resetExample);
+
+  /* ----------------------------- Copy ------------------------------------ */
+  copyBtn.addEventListener("click", async () => {
+    if (!lastText) return;
+    try { await navigator.clipboard.writeText(lastText); }
+    catch (e) {
+      const ta = document.createElement("textarea");
+      ta.value = lastText; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (_) {}
+      document.body.removeChild(ta);
+    }
+    copyBtn.classList.add("copied");
+    copyBtn.querySelector("span").textContent = UI[lang].copied;
+    setTimeout(() => {
+      copyBtn.classList.remove("copied");
+      copyBtn.querySelector("span").textContent = UI[lang].copy;
+    }, 1600);
+  });
+
+  /* ----------------------------- Language -------------------------------- */
+  function setLang(l) {
+    lang = l;
+    document.documentElement.lang = l;
+    const d = UI[l];
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+      const v = d[el.dataset.i18n];
+      if (v == null) return;
+      if (el.dataset.i18n === "sub") el.innerHTML = v; else el.textContent = v;
+    });
+    document.querySelectorAll(".lang button").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.lang === l)));
+    copyBtn.querySelector("span").textContent = d.copy;
+    renderConcepts();
+    applyConcept();
+    try { localStorage.setItem("workshop-lang", l); } catch (e) {}
+  }
+  document.querySelectorAll(".lang button").forEach(b =>
+    b.addEventListener("click", () => setLang(b.dataset.lang)));
+
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) playing = false;
+
+  let saved = "ms";
+  try { saved = localStorage.getItem("workshop-lang") || "ms"; } catch (e) {}
+  setLang(saved);
+</script>
+</body>
+</html>
