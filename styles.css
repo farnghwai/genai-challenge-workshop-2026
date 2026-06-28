@@ -360,11 +360,15 @@ textarea.field { resize: vertical; min-height: 58px; }
 
 /* The clapperboard prop */
 .board {
-  background: var(--slate-bg); border-radius: 14px; overflow: hidden;
+  background: var(--slate-bg); border-radius: 14px;
+  /* overflow visible so the upper jaw stays whole when it swings open above the board */
+  overflow: visible;
   box-shadow: 0 40px 80px -36px rgba(26,23,20,.72), inset 0 0 0 1px rgba(255,255,255,.04);
   color: var(--slate-fg); position: relative;
+  /* sit at the bottom of the hero so the open jaw has clear headroom above (marquee stays put) */
+  align-self: end;
 }
-.board__clap { position: relative; height: 56px; }
+.board__clap { position: relative; height: 56px; border-radius: 14px 14px 0 0; }
 .board__bar { /* fixed lower jaw */
   position: absolute; left: 0; right: 0; bottom: 0; height: 26px;
   background: repeating-linear-gradient(122deg, var(--accent) 0 22px, var(--slate-fg) 22px 44px);
@@ -373,13 +377,14 @@ textarea.field { resize: vertical; min-height: 58px; }
 .board__stick { /* hinged upper jaw, claps on load */
   position: absolute; left: 0; right: 0; bottom: 24px; height: 26px;
   background: repeating-linear-gradient(122deg, var(--accent) 0 22px, var(--slate-fg) 22px 44px);
-  transform-origin: 10px 100%; transform: rotate(-26deg);
+  border-radius: 3px 3px 0 0; /* soften the top edge that now shows above the board when open */
+  transform-origin: 10px 100%; transform: rotate(-10deg);
   animation: clap 1.05s cubic-bezier(.5,1.6,.5,1) .55s both;
 }
 @keyframes clap {
-  0%   { transform: rotate(-26deg); }
+  0%   { transform: rotate(-10deg); }
   55%  { transform: rotate(0deg); }
-  68%  { transform: rotate(-6deg); }
+  68%  { transform: rotate(-3deg); }
   100% { transform: rotate(0deg); }
 }
 .board__grid { padding: 18px 20px 22px; display: grid; gap: 0; }
