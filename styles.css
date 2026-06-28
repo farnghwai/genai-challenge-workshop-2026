@@ -323,6 +323,22 @@ textarea.field { resize: vertical; min-height: 58px; }
 }
 .tip b { color: var(--accent-ink); }
 
+/* Gemini setting reminder — turn on a specific mode before sending */
+.gem-note {
+  margin-top: 14px; font-size: 13px; color: var(--accent-ink);
+  background: var(--accent-tint); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: var(--r-sm); padding: 11px 13px;
+  display: flex; gap: 9px; align-items: flex-start;
+}
+.gem-note__icon { flex: none; }
+.gem-note b { color: var(--accent-ink); }
+.gem-note .chip {
+  font-family: var(--mono); font-size: 11.5px; font-weight: 700;
+  background: var(--card); color: var(--accent-deep);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  border-radius: 6px; padding: 1px 7px; white-space: nowrap;
+}
+
 /* ----------------------------- Index: hero clapperboard ----------------- */
 .hero {
   display: grid; grid-template-columns: 1.05fr .95fr; gap: 44px; align-items: center;

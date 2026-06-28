@@ -97,6 +97,11 @@
           <span class="btn__count"><span id="count">0</span> <span data-i18n="chars">aksara</span></span>
         </div>
 
+        <div class="gem-note">
+          <span class="gem-note__icon" aria-hidden="true">⚙️</span>
+          <span><b data-i18n="gemNoteB">Dalam Gemini:</b> <span data-i18n="gemNote1">hidupkan</span> <span class="chip" data-i18n="gemNoteChip">Canvas</span> <span data-i18n="gemNote3">sebelum hantar prompt ini.</span></span>
+        </div>
+
         <div class="tip">
           <span>🔁</span>
           <span><b data-i18n="tipB">Lelaran ialah kemahirannya.</b> <span data-i18n="tip">Bina kecil dulu, uji, kemudian perhalus satu perkara pada satu masa.</span></span>
@@ -132,6 +137,7 @@
       empty: "Isi jenis app dan tujuan untuk jana prompt bina…",
       tipB: "Lelaran ialah kemahirannya.", tip: "Bina kecil dulu, uji, kemudian perhalus satu perkara pada satu masa.",
       refTipB: "Lepas awak uji,", refTip: "taip terus dalam Gemini: \"Apl saya berfungsi, tapi saya nak perhalus. Tolong ubah: [satu perkara]. Pastikan ringkas dan sesuai sekolah.\"",
+      gemNoteB: "Dalam Gemini:", gemNote1: "hidupkan", gemNoteChip: "Canvas", gemNote3: "sebelum hantar prompt ini.",
       // build template
       bIntro: a => `Buat app web interaktif lengkap yang boleh terus dijalankan dalam satu fail HTML (dengan CSS dan JS di dalamnya) untuk ${a}, yang ringkas untuk pelajar.`,
       bPurpose: p => `Ia patut membantu ${p}.`,
@@ -159,6 +165,7 @@
       empty: "Fill in the app type and purpose to generate a build prompt…",
       tipB: "Iteration is the skill.", tip: "Build small first, test, then refine one thing at a time.",
       refTipB: "Once you've tested it,", refTip: "type straight into Gemini: \"My app works, but I want to refine it. Please change: [one thing]. Keep it simple and school-appropriate.\"",
+      gemNoteB: "In Gemini:", gemNote1: "turn on", gemNoteChip: "Canvas", gemNote3: "before sending this prompt.",
       bIntro: a => `Build a complete, runnable interactive single-page web app in one HTML file (with CSS and JS inline) for ${/^[aeiou]/i.test(a) ? "an" : "a"} ${a}, kept simple for students.`,
       bPurpose: p => `It should help ${p}.`,
       bMust: "It must have:",
